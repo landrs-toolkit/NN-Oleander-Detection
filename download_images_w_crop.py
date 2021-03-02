@@ -1,20 +1,23 @@
 import numpy
 from PIL import Image, ImageDraw
-
-
 #code from jialongw - download_image() method modified
 # imports
 import requests # to get image from the web
 import shutil # to save it locally
 import os
+import sys
 import csv
 import cv2
+import argparse
 from ast import literal_eval
 
 # global variables
-project_name = ""
+project_name = ''
 paths = []
-object_labels = []
+label_list = []
+image_select = False
+ID_list = []
+size = None
 
 def set_paths():
     global paths
@@ -31,7 +34,20 @@ def make_directories():
         else:
             print ("Successfully created the directory %s " % path)
 
+def get_IDs(txtfile):
+    try:
+        tf = open(txtfile, 'r')
+        line_list = [line.rstrip('\n') for line in tf]
+        tf.close()
+    except FileNotFoundError:
+        print('File {} does not exist'.format(txtfile))
+        sys.exit()
+    else:
+        s = set(line_list) # remove deplicates
+        return s
+
 def download_images(csv_file, crop = "No"):
+    global size
     try:
         # read data
         with open(csv_file, 'rt') as file:
@@ -43,59 +59,98 @@ def download_images(csv_file, crop = "No"):
             if has_header:
                 next(data)  # skip header row
 
-            for row_idx, row in enumerate(data):
-                row_index = str(row_idx+1)
-                # load data
-                labeled_data_url = row[2] # load original image url
-                labels = literal_eval(row[3]) # label entry converted to dictionary
-                if len(labels) == 0:
-                    continue # if no labels created, skip the current entry
-                else:
-                    objects = labels['objects'] # load label instances
+            # if size is given, download the limited number of images
+            # else, download all
+            if size is None:
+                data = list(data)
+                size = len(data)
+            number_of_downloaded = 1
+            image_no = [] # tracks the number of images under each label
+            for i in range(len(label_list)):
+                image_no.append(1)
 
-                for i in range(len(object_labels)):
-                    image_downloaded = False
-                    masks = []
-                    mask_index = 0
-                    result = 0
-                    file_name = ""
-                    num = 1
-                    for object in objects:
-                        if object['title'] == object_labels[i]:
-                            if image_downloaded:
+            for row in data:
+            # iterate through the rows
+                if number_of_downloaded <= size:
+                    # load data
+                    asset_ID = row[0] # load image ID
+                    asset_url = row[2] # load original image url
+                    labels = literal_eval(row[3]) # label entry converted to dictionary
+                    if len(labels) == 0: # if no labels created
+                        continue         # skip the current row
+                    else:
+                        objects = labels['objects'] # load label instances
+                    if image_select:                 # if textfile was passed to select image for download
+                        if asset_ID in ID_list:      # if current ID required
+                            ID_list.remove(asset_ID) # remove the asset ID from the list and do the download
+                        else: continue               # else if not required, skip the current row
+                    # iterate through labels to download images and masks of each label
+                    for i in range(len(label_list)):
+                        image_downloaded = False
+                        n = image_no[i]
+                        masks = []
+                        mask_index = 1
+                        result = 0
+                        file_name = ""
+                        num = 1
+                        for object in objects:
+                            if object['title'] == object_labels[i]:
+                                if image_downloaded:
 
-                                #crop image section 
-                                if crop == "polygon":
-                                    param = object['polygon'] #takes in crop coord as dict
-                                    crop_param = []
-                                    for xy in param: #iterates over values and adds to crop_param
-                                        crop_param.append((xy["x"],xy["y"]))
-                                    polygon_crop(file_name, num, crop_param)
-                                    num += 1
-                                else if crop == "box":
-                                    param = object['box'] #takes in crop coord as dict
-                                    crop_param = []
-                                    params = [] # parameters to be averaged
-                                    directory = project_name
+                                    #crop image section 
+                                    if crop == "polygon":
+                                        param = object['polygon'] #takes in crop coord as dict
+                                        crop_param = []
+                                        for xy in param: #iterates over values and adds to crop_param
+                                            crop_param.append((xy["x"],xy["y"]))
+                                        polygon_crop(file_name, num, crop_param)
+                                        num += 1
+                                    else if crop == "box":
+                                        param = object['box'] #takes in crop coord as dict
+                                        crop_param = []
+                                        params = [] # parameters to be averaged
+                                        directory = project_name
 
-                                    for img in os.listdir(directory): # takes dims of polgyon img
-                                        if img.contains("polycrop"):
-                                            image = PIL.Image.open(img)
-                                            params.append(image.size)
-                                    height, width = get_avg_dim(params)
+                                        for img in os.listdir(directory): # takes dims of polgyon img
+                                            if img.contains("polycrop"):
+                                                image = PIL.Image.open(img)
+                                                params.append(image.size)
+                                        height, width = get_avg_dim(params)
 
-                                    for xy in param: #iterates over values and adds to crop_param
-                                        crop_param.append((xy["x"],xy["y"]))
+                                        for xy in param: #iterates over values and adds to crop_param
+                                            crop_param.append((xy["x"],xy["y"]))
 
-                                    box_crop(file_name, height, width, crop_param)         
-                            else:
-                                # download original image
-                                dir_name = paths[3*i]
-                                file_name = "{}{}{}.png".format(project_name, "0"*(5-len(row_index)), row_index)
-                                save_image(labeled_data_url, dir_name, file_name)
-                                image_downloaded = True
-except IOError:
-        logging.exception('')
+                                        box_crop(file_name, height, width, crop_param)         
+                                else:
+                                    # download original image
+                                    dir_name = paths[3*i]
+                                    file_name = "{}{}{}.png".format(project_name, "0"*(5-len(row_index)), row_index)
+                                    save_image(labeled_data_url, dir_name, file_name)
+                                    image_downloaded = True
+                                # download masks of labeled objects
+                                mask_url = object['instanceURI'] # mask instance URI
+                                dir_name = paths[3*i+1]
+                                file_name = '{}{}{}_mask{}.png'.format(project_name, '0'*(5-len(str(n))), n, mask_index)
+                                save_image(mask_url, dir_name, file_name)
+                                mask_index += 1 # increment mask index
+                                masks.append(file_name)
+                                for mask in masks:
+                                    r = cv2.imread(os.path.join(dir_name, file_name)).astype('float32')
+                                    result = result + r
+                        if image_downloaded:
+                            # overlay masks
+                            result = 255*result
+                            result = result.clip(0, 255).astype('uint8')
+                            # save overlaid mask
+                            dir_name = paths[3*i+2]
+                            file_name = '{}{}{}_mask.png'.format(project_name, '0'*(5-len(str(n))), n)
+                            cv2.imwrite(os.path.join(dir_name, file_name), result)
+                            print('Mask successfully generated:  ', os.path.join(dir_name, file_name))
+                    number_of_downloaded += 1 # increment number of downloaded asset
+                else: break    
+    except FileNotFoundError:
+        print('File {} does not exist'.format(txtfile))
+        sys.exit()
     if not data:
         raise ValueError('No data available')
 
@@ -179,13 +234,35 @@ def box_crop(im_file, avg_height, avg_width, crop_param):
 
 if __name__=='__main__':
     # define the name of the directory to be created
-    input_string = input('What is your project\'s name?\n').split()
-    for word in input_string:
-        project_name = project_name + word.capitalize()
-    input_string = input('What are the object labels in your project? (separate by comma)\n').split(',')
-    for word in input_string:
-        object_labels.append(word)
-    set_paths()
-    make_directories()
-    csv_file = input('Enter the csv file name: ')
-    download_images(csv_file)
+    parser = argparse.ArgumentParser()
+    # -p PROJECT_NAME -l LABELS -csv CSV_FILE -txt TXT_FILE -size NUMBER OF IMAGES
+    parser.add_argument('-p', '--projname', help = 'Project name')
+    parser.add_argument('-l', '--labels', help = 'Labels (separated by commas)')
+    parser.add_argument('-csv', '--csvfile', help = 'CSV filename')
+    parser.add_argument('-txt', '--txtfile', help = 'Text filename to download specified images')
+    parser.add_argument('-s', '--size', help = 'Number of images to be downloaded', type=int)
+    args = parser.parse_args()
+
+    if len(sys.argv) == 1:
+        print('-h for help')
+    else:
+        project_name = args.projname
+        project_labels = args.labels.split(',')
+        for label in project_labels:
+            label_list.append(label)
+        set_paths()
+        make_directories()
+        csv_file = args.csvfile
+        if args.txtfile is not None:
+            image_select = True
+            ID_list = get_IDs(args.txtfile)
+        if args.size is not None:
+            size = args.size
+        download_images(csv_file)
+        download_images(csv_file, "polygon")
+        download_images(csv_file, "box")
+        if ID_list: # if ID list still has items after the download
+            print('Images with the following IDs were not availble:')
+            for item in ID_list:
+                print(item)
+        else: print('All completed')
