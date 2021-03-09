@@ -20,7 +20,7 @@ Project name by which the output root directory will be named
 Labels of image annotation, sub-directories will be created for each label
 ##### `-csv/--csvfile`: csv file
 CSV file exported from Labelbox which contains data of annotated images
-##### `-txt/--txtfile`: test file (optional)
+##### `-txt/--txtfile`: text file (optional)
 Text file which contains IDs of images selected for downloaded
 ##### `-s/--size`: number of images (optional)
 Maximum number of images to be downloaded
