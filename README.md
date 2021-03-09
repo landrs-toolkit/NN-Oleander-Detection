@@ -1,7 +1,8 @@
 # NN-Oleander-Detection
 This repository contains scripts to support the training of NNs to detect Oleander plants in drone imagery.
-The scripts to download images will work with csv file exported from [Labelbox](https://labelbox.com/)
-The training notebook is mostly easily used in [python notebooks](https://nbviewer.jupyter.org/github/jupyter/notebook/blob/master/docs/source/examples/Notebook/What%20is%20the%20Jupyter%20Notebook.ipynb#)
+The scripts to download images will work with csv file exported from [Labelbox](https://labelbox.com/).
+The training notebook is mostly easily used in [python notebooks](https://nbviewer.jupyter.org/github/jupyter/notebook/blob/master/docs/source/examples/Notebook/What%20is%20the%20Jupyter%20Notebook.ipynb#).
+
 [Google Colaboratory](https://colab.research.google.com/notebooks/intro.ipynb) is recommended when you require a Jupyter notebook environment with a ready-to-use GPU in the Cloud.
 
 Currently scripts provided carry out 3 processes (fetching images from the web, cropping images according to labels and saving images locally) intended to prepare them for use in the PyTorch based NN training workflow described in [TorchVision Object Detection Finetuning Tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html).
