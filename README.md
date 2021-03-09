@@ -5,7 +5,7 @@ The training notebook is mostly easily used in [python notebooks](https://nbview
 
 [Google Colaboratory](https://colab.research.google.com/notebooks/intro.ipynb) is recommended when you require a Jupyter notebook environment with a ready-to-use GPU in the Cloud.
 
-Currently scripts provided carry out 3 processes, i.e. fetching images from the web, cropping images according to labels and saving images locally, intended to prepare them for use in the PyTorch based NN training workflow described in [TorchVision Object Detection Finetuning Tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html).
+Currently scripts provided carry out 3 processes, i.e. fetching images from the web, cropping images according to labels and saving images in directories, intended to prepare them for use in the PyTorch based NN training workflow described in [TorchVision Object Detection Finetuning Tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html).
 
 To use these scripts with this pipeline, first execute as described below, after which the tutorial steps may be followed as is.
 ## Usage Example
