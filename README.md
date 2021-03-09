@@ -19,8 +19,11 @@ python download_image.py -p ExampleProject -l "Label 1","Label 2" -csv Example.c
 ```
 ### NN Training
 Upload to your Google Drive a zipped folder of the images downloaded
+
 Mount your Google Drive to the notebook
+
 Unzip the folder to load the images on the hosted server
+
 Run the blocks to set up and train the NN
   * You may change the number of epochs to train for based on the size of your dataset
 ## Credits
