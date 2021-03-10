@@ -91,7 +91,8 @@ def download_images(csv_file):
                         mask_index = 1
                         result = 0
                         file_name = ""
-                        num = 1
+                        pnum = 1 # polygon crop num
+                        bnum = 1 # box crop num
                         # iterate through the all the labels created on the asset image
                         for object in objects:
                             if object['title'] == label_list[i]:
@@ -102,10 +103,17 @@ def download_images(csv_file):
                                         crop_param = []
                                         for xy in param: #iterates over values and adds to crop_param
                                             crop_param.append((xy["x"],xy["y"]))
-                                        polygon_crop(dir_name, file_name, crop_param, file_name + "_polycrop_{}.png".format(num))
-                                        num += 1
-                                    #if not oleander
-                                    #...box
+                                        polygon_crop(dir_name, file_name, crop_param, file_name + "_polycrop_{}.png".format(pnum))
+                                        pnum += 1
+                                    if object['title'] == "Not oleander":
+                                        param = object['bbox'] #takes in crop coord as dict
+                                        crop_param = []
+                                        crop_param.append((param["top"],param["left"]))
+                                        crop_param.append((param["top"] + param["height"],param["left"]))
+                                        crop_param.append((param["top"] + param["height"],param["left"] + param["width"]))
+                                        crop_param.append((param["top"],param["left"] + param["width"]))
+                                        polygon_crop(dir_name, file_name, crop_param, file_name + "_boxcrop_{}.png".format(bnum))
+                                        bnum += 1
                                 else:
                                     # download original image if did not
                                     dir_name = paths[3*i]
@@ -114,15 +122,25 @@ def download_images(csv_file):
                                     image_no[i] += 1
                                     image_downloaded = True
 
-                                    #crop polygon
+                                    # crop polygon
                                     if object['title'] == "Oleander Plant":
                                         param = object['polygon'] #takes in crop coord as dict
                                         crop_param = []
                                         for xy in param: #iterates over values and adds to crop_param
-                                            print(type((xy["x"],xy["y"])))
                                             crop_param.append((xy["x"],xy["y"]))
-                                        polygon_crop(dir_name, file_name, crop_param, file_name + "_polycrop_{}.png".format(num))
-                                        num += 1
+                                        polygon_crop(dir_name, file_name, crop_param, file_name + "_polycrop_{}.png".format(pnum))
+                                        pnum += 1
+
+                                    # crop bounding box
+                                    if object['title'] == "Not oleander":
+                                        param = object['bbox'] #takes in crop coord as dict
+                                        crop_param = []
+                                        crop_param.append((param["top"],param["left"]))
+                                        crop_param.append((param["top"] + param["height"],param["left"]))
+                                        crop_param.append((param["top"] + param["height"],param["left"] + param["width"]))
+                                        crop_param.append((param["top"],param["left"] + param["width"]))
+                                        polygon_crop(dir_name, file_name, crop_param, file_name + "_boxcrop_{}.png".format(bnum))
+                                        bnum += 1
                     #             # download masks of labeled objects
                     #             mask_url = object['instanceURI'] # mask instance URI
                     #             dir_name = paths[3*i+1]
@@ -166,7 +184,7 @@ def save_image(image_url, dir_name, file_name):
         print("Image couldn\'t be retreived")
 
 def polygon_crop(dir_name, im_file, crop_param, save_filename):
-    #code to poly crop
+    #code to poly crop - https://stackoverflow.com/questions/22588074/polygon-crop-clip-using-python-pil
 
     # read image as RGB and add alpha (transparency)
     im = Image.open(os.path.join(dir_name, im_file)).convert("RGBA")
@@ -192,6 +210,40 @@ def polygon_crop(dir_name, im_file, crop_param, save_filename):
     # back to Image from numpy
     im_crop = Image.fromarray(newImArray, "RGBA")
     im_crop.save(os.path.join(dir_name, save_filename))
+
+# def get_avg_dim(img_params):
+#     # for image in folder
+#     # add h,w to list img_params
+#     # find mean https://www.geeksforgeeks.org/python-column-mean-in-tuple-list/
+
+#     def avg(list): # returns average of elements in a tuple
+#         return sum(list)/len(list) 
+                
+#     average = tuple(map(avg, zip(*img_params))) 
+
+#     return average
+
+# def box_crop(im_file, avg_height, avg_width, crop_param):
+#     # keep cropping and saving files until max possible
+#     # boxes with height weight cut out per image
+#     im = Image.open(im_file)
+#     im_width, im_height = int(im.size)
+#     left = 0 # left most coord of image
+#     upper = 0 # top most coord
+#     im_num = 1
+
+#     while left < im_width and upper < im_height:
+#         if left + avg_width > im_width or upper + avg_height > im_height:
+#             im_crop = im.crop((left, upper, im_width, im_height))
+#             left = im_width
+#             upper = im_height
+#             im_crop.save("{}_boxcrop_{}.png".format(im_file, im_num)
+        
+#         im_crop = im.crop((left, upper, left + avg_width, upper + avg_height)) # crop to size of avg polygon param
+#         im_crop.save("{}_boxcrop_{}.png".format(im_file, im_num)
+#         left += avg_width 
+#         upper += avg_height # traverse to next section of img
+#         im_num += 1
 
 if __name__=='__main__':
     # define the name of the directory to be created
