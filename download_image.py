@@ -1,6 +1,5 @@
 import numpy, PIL
 from PIL import Image, ImageDraw, ImageChops
-import wand 
 #code from jialongw - download_image() method modified
 # imports
 import requests # to get image from the web
