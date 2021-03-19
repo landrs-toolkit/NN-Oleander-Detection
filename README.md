@@ -5,9 +5,25 @@ The training notebook is mostly easily used in [python notebooks](https://nbview
 
 [Google Colaboratory](https://colab.research.google.com/notebooks/intro.ipynb) is recommended when you require a Jupyter notebook environment with a ready-to-use GPU in the Cloud.
 
-Currently scripts provided carry out 3 processes, i.e. fetching images from the web, cropping images according to labels and saving images in directories, intended to prepare them for use in the PyTorch based NN training workflow described in [TorchVision Object Detection Finetuning Tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html).
+Currently scripts provided carry out 3 processes:
+1. Fetching images from the web
+2. Cropping the images according to labels 
+3. Saving images in directories intended to prepare them for use in the PyTorch based NN training workflow described in [TorchVision Object Detection Finetuning Tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html)
 
 To use these scripts with this pipeline, first execute as described below, after which the tutorial steps may be followed as is.
+
+## Prerequisites
+Python3 and python modules:
+Numpy, Pillow, OpenCV, Requests
+There are multiple ways of installing the above, 1 approach is to use Anaconda.  If you use this approach the following will work on most operating systems from a terminal:
+1. Install Anaconda for whichever OS you are using follow their [docs](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
+2. Create and activate a conda environment and the run the following and the example
+```bash
+$ conda create --name MyNewPythonEnvironment
+$ conda activate MyNewPythonEnvironment
+$ conda install pillow opencv requests
+```
+
 ## Usage Example
 ### Download Images
 ```sh
